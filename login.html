@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1); 
+            max-width: 400px;
+            width: 100%;
+            text-align: center; 
+        }
+
+        h2 {
+            color: #007bff; /* Color for the heading */
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333; /* Darker color for labels */
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px; /* Increased padding for inputs */
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease; /* Smooth border transition */
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="text"]:focus {
+            border-color: #007bff; /* Highlight color on focus */
+        }
+
+        input[type="submit"],
+        #verifyButton
+        #otpButton,
+        .button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff; /* Standard blue color */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease; /* Smooth hover transition */
+        }
+
+        input[type="submit"]:hover,
+        #otpButton:hover,
+        .button:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+        }
+
+        #responseMessage {
+            margin-top: 10px; /* Space above the response message */
+            color: #ff4d4d; /* Error message color */
+            font-size: 0.9em; /* Smaller font for error messages */
+        }
+
+        /* Additional styles for OTP section */
+        #otpSection {
+            margin-top: 15px;
+            display: none; /* Hide OTP section initially */
+        }
+
+        /* Success message style */
+        .successMessage {
+            color: #28a745; /* Green color for success messages */
+        }
+
+        /* Specific order styles */
+#verifyButton {
+    order: 1; /* Display verify button first */
+}
+
+#otpButton {
+    order: 2; /* Display get OTP button second */
+}
+
+/* Button spacing */
+#verifyButton,
+#otpButton {
+    margin-top: 10px; /* Space between buttons */
+    padding: 12px;
+    width: 100%;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+#verifyButton:hover,
+#otpButton:hover {
+    background-color: #0056b3;
+}
+
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Login</h2>
+
+    <!-- Login Form -->
+    <form id="loginForm" method="post">
+        <div id="loginFields">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+
+            <input type="submit" class="button" value="Login">
+        </div>
+    </form>
+
+   
+    <p id="responseMessage"></p>
+    <p id="userEmail" style="display: none;"></p>
+
+    <!-- <button id="otpButton" class="button" onclick="requestOtp()" style="display:none;">Get OTP</button> -->
+
+    
+    <div id="otpSection">
+        <label for="otp">Enter OTP</label>
+        <input type="text" id="otp" name="otp" required placeholder="Enter your OTP">
+        <button class="button" id="verifyButton"  style="display: none;" >Verify OTP</button>
+    </div>
+</div>
+
+<script>
+    const email= ''
+    document.getElementById('loginForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const formData = new FormData(this);
+        try {
+            const response = await fetch('/login', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                
+                document.getElementById('loginFields').style.display = "none";
+                const email_id  = result.email_id
+
+                document.getElementById('responseMessage').textContent = result.message;
+                document.getElementById('responseMessage').classList.add('successMessage'); // Add success class
+
+                document.getElementById('userEmail').textContent = "OTP will be sent to: " + email_id;
+                document.getElementById('userEmail').style.display = "block";
+                const otpButton = document.createElement('button');
+                otpButton.textContent = 'Get OTP';
+                otpButton.className = 'button';
+                otpButton.id = 'otpButton'; 
+                otpButton.onclick = function() {
+                    requestOtp(email_id); 
+                };
+
+                // Append the OTP button to the container
+                document.querySelector('.container').appendChild(otpButton);
+                otpButton.style.display = "inline-block"; 
+
+                // Show the OTP section
+                document.getElementById('otpSection').style.display = "block";
+            } else {
+                document.getElementById('responseMessage').textContent = result.detail;
+                document.getElementById('responseMessage').classList.remove('successMessage'); // Remove success class
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('responseMessage').textContent = "An error occurred. Please try again.";
+        }
+    });
+
+  
+    async function requestOtp(email) {
+        
+
+        try {
+            const response = await fetch('/get_otp',{
+                method:'POST',
+                headers:{'content-Type': 'application/json'},
+                body: JSON.stringify({ email }) 
+               
+
+            });
+            const result = await response.json();
+            if (response.ok) {
+                console.log(result)
+                console.log(result.mail_status)
+                document.getElementById('responseMessage').textContent = result.mail_status; 
+                document.getElementById('userEmail').style.display = "none";
+                document.getElementById('otpButton').style.display = "none";
+                document.getElementById('otpSection').style.display = "block";
+                // const verifyButton = document.createElement('button');
+                const verifyButton = document.getElementById("verifyButton")
+                verifyButton.textContent = 'Get verify';
+                verifyButton.className = 'button';
+                verifyButton.id = 'verifyButton'; 
+                verifyButton.onclick = function() {
+                    verifyOtp(email); 
+                };
+
+                // Append the verify button to the container
+                document.querySelector('.container').appendChild(verifyButton);
+                verifyButton.style.display = "inline-block"; 
+
+                
+
+        }
+            else{
+                const errorResult = await response.json();
+                document.getElementById('responseMessage').textContent = errorResult.detail;
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('responseMessage').textContent = "An error occurred. Please try again.";
+            
+        }
+       
+    }
+
+    async function verifyOtp(email) {
+    const otp = document.getElementById('otp').value;
+
+    console.log("Attempting to verify OTP");
+
+    try {
+        const response = await fetch('/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ otp, email })
+        });
+
+        if (response.redirected) {
+            window.location.href = response.url; // Redirect to the new URL
+        } else {
+            const result = await response.json();
+            const verifyButton = document.getElementById('verifyButton');
+            const otpButton = document.getElementById('otpButton');
+            verifyButton.textContent = "Try verifying again"; 
+            verifyButton.style.display = "block";
+            const container = document.querySelector('.container');
+
+            // Check if otpButton exists before removing it
+            if (otpButton) {
+                container.removeChild(otpButton);
+            }
+
+            if (response.ok) {
+                document.getElementById('responseMessage').textContent = "OTP verified successfully. Login complete!";
+                document.getElementById('responseMessage').classList.add('successMessage'); // Add success class
+            } else {
+                document.getElementById('responseMessage').textContent = result.detail || "OTP verification failed.";
+                document.getElementById('responseMessage').classList.remove('successMessage');
+                
+                // Create and append new OTP button if needed
+                let otpButtonNew = document.createElement('button');
+                otpButtonNew.textContent = 'Resend OTP';
+                otpButtonNew.className = 'button';
+                otpButtonNew.id = 'otpButton';
+                otpButtonNew.onclick = function() {
+                    requestOtp(email);
+                };
+                container.appendChild(otpButtonNew);
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('responseMessage').textContent = "An error occurred during OTP verification. Please try again.";
+    }
+}
+
+
+</script>
+
+</body>
+</html>
